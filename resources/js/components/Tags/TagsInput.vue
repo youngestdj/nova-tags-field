@@ -35,12 +35,13 @@ export default {
             }
 
             this.$emit('input', [...this.tags, this.newTag]);
-
-            this.clearInput();
         },
 
         removeTag(tag) {
-            this.$emit('input', this.tags.filter(t => t !== tag));
+            this.$emit(
+                'input',
+                this.tags.filter((t) => t !== tag)
+            );
         },
 
         selectTag(tag) {
@@ -63,6 +64,22 @@ export default {
             if (!this.input) {
                 this.suggestions = [];
 
+                let queryString = `?limit=${this.suggestionLimit}`;
+
+                if (this.type) {
+                    queryString += `&filter[type]=${this.type}`;
+                }
+
+                window.axios
+                    .get(`/nova-vendor/spatie/nova-tags-field${queryString}`)
+                    .then((response) => {
+                        // If the input was cleared by the time the request finished,
+                        // clear the suggestions too.
+
+                        this.suggestions = response.data.filter((suggestion) => {
+                            return !this.tags.find((tag) => tag === suggestion);
+                        });
+                    });
                 return;
             }
 
@@ -72,31 +89,33 @@ export default {
                 return;
             }
 
-            let queryString = `?filter[containing]=${encodeURIComponent(this.input)}&limit=${this.suggestionLimit}`;
+            let queryString = `?filter[containing]=${encodeURIComponent(this.input)}&limit=${
+                this.suggestionLimit
+            }`;
 
             if (this.type) {
                 queryString += `&filter[type]=${this.type}`;
             }
 
-            window.axios.get(`/nova-vendor/spatie/nova-tags-field${queryString}`).then(response => {
-                // If the input was cleared by the time the request finished,
-                // clear the suggestions too.
-                if (!this.input) {
-                    this.suggestions = [];
+            window.axios
+                .get(`/nova-vendor/spatie/nova-tags-field${queryString}`)
+                .then((response) => {
+                    // If the input was cleared by the time the request finished,
+                    // clear the suggestions too.
+                    if (!this.input) {
+                        this.suggestions = [];
 
-                    return;
-                }
+                        return;
+                    }
 
-                this.suggestions = response.data.filter(suggestion => {
-                    return !this.tags.find(tag => tag === suggestion);
+                    this.suggestions = response.data.filter((suggestion) => {
+                        return !this.tags.find((tag) => tag === suggestion);
+                    });
                 });
-            });
         },
 
         insertSuggestion(suggestion) {
             this.$emit('input', [...this.tags, suggestion]);
-
-            this.clearInput();
         },
     },
 
@@ -112,12 +131,17 @@ export default {
                 value: this.input,
             },
             inputEvents: {
-                input: e => {
+                input: (e) => {
                     this.input = e.target.value;
 
                     this.throttledGetSuggested();
                 },
-                keydown: e => {
+                focus: (e) => {
+                    this.input = e.target.value;
+
+                    this.throttledGetSuggested();
+                },
+                keydown: (e) => {
                     if (e.key === 'Backspace' && this.removeOnBackspace) {
                         this.handleBackspace();
                     }
@@ -125,7 +149,7 @@ export default {
                         e.preventDefault();
                         this.addTag();
                     }
-                    if(e.key === "ArrowDown" && this.suggestions.length === 1) {
+                    if (e.key === 'ArrowDown' && this.suggestions.length === 1) {
                         this.input = this.suggestions[0];
                         this.addTag();
                     }
