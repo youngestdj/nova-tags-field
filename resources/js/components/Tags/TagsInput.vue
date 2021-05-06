@@ -67,7 +67,7 @@ export default {
                 let queryString = `?limit=${this.suggestionLimit}`;
 
                 if (this.type) {
-                    queryString += `&filter[type]=${this.type}`;
+                    queryString += `&filter[type]=${encodeURIComponent(this.type)}`;
                 }
 
                 window.axios
@@ -94,7 +94,7 @@ export default {
             }`;
 
             if (this.type) {
-                queryString += `&filter[type]=${this.type}`;
+                queryString += `&filter[type]=${encodeURIComponent(this.type)}`;
             }
 
             window.axios
